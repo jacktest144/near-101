@@ -1,12 +1,15 @@
 import { context } from "near-sdk-as";
 import { Todo, todosStorage } from "./model";
 
+
+/**
+ * @dev allows a user to create a new to-do
+ * @param todo the object containing the necessary details to initialize a new to-do 
+ * 
+ */
 export function newTodo(todo: Todo): void {
-  const allTodos = todosStorage.values();
+  assert(todo.todo.length > 0, "Empty to-do");
   let id = todosStorage.length;
-  for (let i = 0; i < allTodos.length; i++) {
-    id = parseInt(allTodos[i].id) === id ? id + 1 : id;
-  }
   todo.id = id.toString();
   let storedTodo = todosStorage.get(todo.id);
   if (storedTodo !== null) {
@@ -15,7 +18,13 @@ export function newTodo(todo: Todo): void {
   todosStorage.set(todo.id, Todo.fromPayload(todo));
 }
 
+/**
+ * @dev allows a user to edit one of his to-dos
+ * @param todo object containing the changes that needs to be made to the to-do
+ * @returns the update to-do
+ */
 export function editTodo(todo: Todo): Todo {
+  assert(todo.todo.length > 0, "Empty to-do");
   let myTodo = todosStorage.get(todo.id);
   if (!myTodo || myTodo.owner != context.sender) {
     throw new Error(`You can't edit this todo`);
@@ -28,6 +37,10 @@ export function editTodo(todo: Todo): Todo {
   return finalTodo;
 }
 
+/**
+ * @dev allows a user to mark one of his to-do as complete
+ * @param id index of to-do
+ */
 export function markCompleted(id: string): Todo {
   let myTodo = todosStorage.get(id);
   if (!myTodo || myTodo.owner != context.sender) {
@@ -40,6 +53,10 @@ export function markCompleted(id: string): Todo {
   return finalTodo;
 }
 
+/**
+ * @dev allows a user to delete one of his to-do
+ * @param id index of to-do
+ */
 export function deleteTodo(id: string): void {
   const myTodo = todosStorage.get(id);
   if (!myTodo || myTodo.owner != context.sender) {
@@ -48,7 +65,15 @@ export function deleteTodo(id: string): void {
   todosStorage.delete(id);
 }
 
+/**
+ * 
+ * @param sender account to retrieve the to-dos
+ * 
+ * @returns all the to-dos of a user
+ */
 export function getTodos(sender: string): Todo[] | null {
+  // Account names on testnet ends with .testnet
+  assert(sender.length > 8, "Invalid account name"); 
   const allTodos = todosStorage.values();
   let filter: Todo[] = [];
   for (let i = 0; i < allTodos.length; i++) {
